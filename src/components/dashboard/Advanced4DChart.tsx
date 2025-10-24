@@ -135,17 +135,17 @@ export function Advanced4DChart() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <motion.div
-                className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center"
+                className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center neon-glow"
                 whileHover={{ scale: 1.05, rotate: 5 }}
               >
-                <Activity className="h-6 w-6 text-primary-foreground" />
+                <Zap className="h-6 w-6 text-primary-foreground" />
               </motion.div>
               <div>
-                <CardTitle className="text-xl font-bold">
-                  Biểu đồ 4D - Chỉ số Kinh tế Tổng hợp
+                <CardTitle className="text-xl font-bold gradient-text">
+                  Biểu đồ 4D Nâng cao
                 </CardTitle>
                 <p className="text-muted-foreground text-sm">
-                  Phân tích đa chiều theo thời gian thực
+                  Phân tích đa chiều hiệu quả kinh tế
                 </p>
               </div>
             </div>
@@ -208,21 +208,33 @@ export function Advanced4DChart() {
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                    <defs>
+                      <linearGradient id="scatterGradient1" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                        <stop offset="100%" stopColor="hsl(var(--chart-2))" stopOpacity={0.6}/>
+                      </linearGradient>
+                      <linearGradient id="scatterGradient2" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--chart-3))" stopOpacity={0.8}/>
+                        <stop offset="100%" stopColor="hsl(var(--chart-4))" stopOpacity={0.6}/>
+                      </linearGradient>
+                    </defs>
                     <XAxis 
                       type="number" 
                       dataKey="x" 
                       name="GDP" 
                       unit=" tỷ VNĐ"
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                       tickLine={{ stroke: "hsl(var(--border))" }}
+                      axisLine={{ stroke: "hsl(var(--border))" }}
                     />
                     <YAxis 
                       type="number" 
                       dataKey="y" 
                       name="Việc làm" 
                       unit="%"
-                      tick={{ fontSize: 12 }}
+                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                       tickLine={{ stroke: "hsl(var(--border))" }}
+                      axisLine={{ stroke: "hsl(var(--border))" }}
                     />
                     <ZAxis 
                       type="number" 
@@ -232,11 +244,11 @@ export function Advanced4DChart() {
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
-                    <Scatter name="Tỉnh/Thành" data={data} fill="#8884d8">
+                    <Scatter name="Tỉnh/Thành" data={data} fill="url(#scatterGradient1)">
                       {data.map((entry, index) => (
                         <Cell 
                           key={`cell-${index}`} 
-                          fill={entry.color}
+                          fill={index % 2 === 0 ? "url(#scatterGradient1)" : "url(#scatterGradient2)"}
                           className="data-point"
                         />
                       ))}

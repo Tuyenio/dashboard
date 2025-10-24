@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ExportDialog } from "@/components/ui/export-dialog";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
+import { MapPin } from "lucide-react";
 
 interface VietnamHeatMapProps {
   selectedKPI: string;
@@ -46,15 +47,17 @@ export function VietnamHeatMap({ selectedKPI, onKPIChange }: VietnamHeatMapProps
   ];
 
   const getColor = (value: number) => {
-    if (value >= 90) return "#10b981"; // emerald-500
-    if (value >= 75) return "#3b82f6"; // blue-500
-    if (value >= 60) return "#f59e0b"; // amber-500
-    return "#ef4444"; // red-500
+    if (value >= 90) return "hsl(var(--chart-1))";
+    if (value >= 75) return "hsl(var(--chart-2))";
+    if (value >= 60) return "hsl(var(--chart-3))";
+    return "hsl(var(--chart-4))";
   };
 
-  const getColorIntensity = (value: number) => {
-    const intensity = Math.max(0.3, value / 100);
-    return intensity;
+  const getGradientColor = (value: number) => {
+    if (value >= 90) return "from-chart-1/80 to-chart-1/40";
+    if (value >= 75) return "from-chart-2/80 to-chart-2/40";
+    if (value >= 60) return "from-chart-3/80 to-chart-3/40";
+    return "from-chart-4/80 to-chart-4/40";
   };
 
   const handleProvinceClick = (province: ProvinceData) => {
@@ -67,23 +70,31 @@ export function VietnamHeatMap({ selectedKPI, onKPIChange }: VietnamHeatMapProps
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.6 }}
     >
-      <Card className="overflow-hidden hover:shadow-xl transition-all duration-500 border-2 hover:border-primary/20">
+      <Card className="card-premium chart-container overflow-hidden">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-                {t("overview.heatmap")}
-              </CardTitle>
-              <CardDescription className="mt-1">
-                Phân bố chỉ số trên toàn quốc - Nhấp vào tỉnh/thành để xem chi tiết
-              </CardDescription>
+            <div className="flex items-center gap-3">
+              <motion.div
+                className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center neon-glow"
+                whileHover={{ scale: 1.05, rotate: 5 }}
+              >
+                <MapPin className="h-6 w-6 text-primary-foreground" />
+              </motion.div>
+              <div>
+                <CardTitle className="text-xl font-bold gradient-text">
+                  {t("overview.heatmap")}
+                </CardTitle>
+                <CardDescription className="mt-1 text-muted-foreground">
+                  Phân bố chỉ số trên toàn quốc - Nhấp vào tỉnh/thành để xem chi tiết
+                </CardDescription>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <Select value={selectedKPI} onValueChange={onKPIChange}>
-                <SelectTrigger className="w-48 bg-background border-2 hover:border-primary/30 transition-colors">
+                <SelectTrigger className="w-48 glass-effect border-primary/30 hover:border-primary/50 transition-all duration-300">
                   <SelectValue placeholder="Chọn chỉ số" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="glass-effect">
                   <SelectItem value="doanh-nghiep">{t("overview.enterprises")}</SelectItem>
                   <SelectItem value="xuat-khau">{t("overview.export")}</SelectItem>
                   <SelectItem value="lao-dong">{t("overview.employees")}</SelectItem>
@@ -97,43 +108,39 @@ export function VietnamHeatMap({ selectedKPI, onKPIChange }: VietnamHeatMapProps
 
         <CardContent>
           <div className="relative">
-            {/* Map SVG */}
             <motion.div
-              className="relative bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-xl p-6 border-2 border-dashed border-border"
-              style={{ height: "500px" }}
+              className="relative bg-gradient-to-br from-background/50 via-background/80 to-background/50 rounded-xl p-8 border border-border/50 backdrop-blur-sm"
+              style={{ height: "600px" }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
             >
-              {/* Vietnam map outline (simplified) */}
               <svg
                 viewBox="0 0 100 100"
                 className="absolute inset-0 w-full h-full"
-                style={{ filter: "drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))" }}
+                style={{ filter: "drop-shadow(0 8px 16px rgba(0, 0, 0, 0.15))" }}
               >
                 <defs>
-                  <pattern id="mapPattern" patternUnits="userSpaceOnUse" width="4" height="4">
-                    <rect width="4" height="4" fill="transparent"/>
-                    <circle cx="2" cy="2" r="0.5" fill="currentColor" opacity="0.1"/>
-                  </pattern>
+                  <linearGradient id="mapGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.1"/>
+                    <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.05"/>
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.1"/>
+                  </linearGradient>
                 </defs>
 
-                {/* Simplified Vietnam border */}
                 <path
-                  d="M45,15 Q55,20 60,35 Q58,45 55,55 Q60,65 58,75 Q50,85 45,90 Q35,85 30,75 Q25,65 28,55 Q25,45 30,35 Q35,25 45,15 Z"
-                  fill="url(#mapPattern)"
+                  d="M45,15 Q50,18 55,20 Q58,25 60,35 Q59,40 58,45 Q60,50 58,55 Q60,60 59,65 Q58,70 56,75 Q54,80 50,85 Q45,88 40,85 Q35,82 32,75 Q28,68 30,60 Q28,52 30,45 Q28,38 32,32 Q35,25 40,20 Q42,18 45,15 Z"
+                  fill="url(#mapGradient)"
                   stroke="hsl(var(--border))"
-                  strokeWidth="1"
-                  className="text-muted-foreground"
+                  strokeWidth="1.5"
                 />
               </svg>
 
-              {/* Province points */}
               <AnimatePresence>
                 {provinces.map((province, index) => (
                   <motion.div
                     key={province.name}
-                    className="absolute cursor-pointer group"
+                    className="absolute cursor-pointer group z-10"
                     style={{
                       left: `${province.x}%`,
                       top: `${province.y}%`,
@@ -142,90 +149,76 @@ export function VietnamHeatMap({ selectedKPI, onKPIChange }: VietnamHeatMapProps
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{
-                      delay: index * 0.1,
+                      delay: index * 0.08,
                       type: "spring",
-                      stiffness: 200
+                      stiffness: 300,
+                      damping: 20
                     }}
-                    whileHover={{ scale: 1.2, zIndex: 10 }}
+                    whileHover={{ scale: 1.3, zIndex: 20 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => handleProvinceClick(province)}
                     onMouseEnter={() => setHoveredProvince(province)}
                     onMouseLeave={() => setHoveredProvince(null)}
                   >
-                    {/* Province circle */}
-                    <motion.div
-                      className="relative"
-                      animate={{
-                        scale: hoveredProvince?.name === province.name ? [1, 1.1, 1] : 1,
+                    <div
+                      className={`w-6 h-6 rounded-full border-2 border-white shadow-xl bg-gradient-to-br ${getGradientColor(province.value)} backdrop-blur-sm neon-glow`}
+                      style={{
+                        boxShadow: `0 4px 12px ${getColor(province.value)}40, 0 0 20px ${getColor(province.value)}20`,
                       }}
-                      transition={{ repeat: hoveredProvince?.name === province.name ? Infinity : 0, duration: 1 }}
-                    >
-                      <div
-                        className="w-4 h-4 rounded-full border-2 border-white shadow-lg"
-                        style={{
-                          backgroundColor: getColor(province.value),
-                          opacity: getColorIntensity(province.value),
-                        }}
-                      />
+                    />
 
-                      {/* Pulse animation */}
-                      <motion.div
-                        className="absolute inset-0 rounded-full border-2"
-                        style={{ borderColor: getColor(province.value) }}
-                        animate={{
-                          scale: [1, 2, 1],
-                          opacity: [0.7, 0, 0.7],
-                        }}
-                        transition={{
-                          repeat: Infinity,
-                          duration: 2,
-                          delay: index * 0.2,
-                        }}
-                      />
-                    </motion.div>
-
-                    {/* Province label */}
                     <motion.div
-                      className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-background/95 backdrop-blur-sm text-foreground text-xs font-medium px-2 py-1 rounded-md shadow-lg border border-border whitespace-nowrap"
-                      initial={{ opacity: 0, y: 10 }}
+                      className="absolute top-8 left-1/2 transform -translate-x-1/2 glass-effect text-foreground text-sm font-medium px-3 py-2 rounded-lg shadow-elegant border border-border/50 whitespace-nowrap backdrop-blur-lg"
+                      initial={{ opacity: 0, y: 10, scale: 0.8 }}
                       animate={{
                         opacity: hoveredProvince?.name === province.name ? 1 : 0,
-                        y: hoveredProvince?.name === province.name ? 0 : 10
+                        y: hoveredProvince?.name === province.name ? 0 : 10,
+                        scale: hoveredProvince?.name === province.name ? 1 : 0.8
                       }}
-                      style={{ fontFamily: "'Inter', sans-serif" }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <div className="font-semibold">{province.name}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="font-bold gradient-text">{province.name}</div>
+                      <div className="text-xs text-primary font-semibold flex items-center gap-1">
                         <AnimatedCounter end={province.value} duration={0.5} suffix="%" />
+                        <div
+                          className="w-2 h-2 rounded-full animate-neon-pulse"
+                          style={{ backgroundColor: getColor(province.value) }}
+                        />
                       </div>
                     </motion.div>
                   </motion.div>
                 ))}
               </AnimatePresence>
 
-              {/* Legend */}
               <motion.div
-                className="absolute bottom-4 left-4 bg-background/95 backdrop-blur-sm p-4 rounded-lg shadow-lg border border-border"
-                initial={{ opacity: 0, x: -20 }}
+                className="absolute bottom-6 left-6 glass-effect p-5 rounded-xl shadow-elegant border border-border/50 backdrop-blur-lg"
+                initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 1 }}
+                transition={{ delay: 1.2 }}
               >
-                <div className="text-sm font-semibold text-foreground mb-2">Chỉ số hiệu suất</div>
-                <div className="space-y-2">
+                <div className="text-sm font-bold text-foreground mb-3 gradient-text">Thang Chỉ Số Hiệu Suất</div>
+                <div className="space-y-3">
                   {[
-                    { range: "90-100%", color: "#10b981", label: "Xuất sắc" },
-                    { range: "75-89%", color: "#3b82f6", label: "Tốt" },
-                    { range: "60-74%", color: "#f59e0b", label: "Trung bình" },
-                    { range: "< 60%", color: "#ef4444", label: "Cần cải thiện" },
+                    { range: "90-100%", color: "hsl(var(--chart-1))", label: "Xuất sắc", gradient: "from-chart-1/80 to-chart-1/40" },
+                    { range: "75-89%", color: "hsl(var(--chart-2))", label: "Tốt", gradient: "from-chart-2/80 to-chart-2/40" },
+                    { range: "60-74%", color: "hsl(var(--chart-3))", label: "Trung bình", gradient: "from-chart-3/80 to-chart-3/40" },
+                    { range: "< 60%", color: "hsl(var(--chart-4))", label: "Cần cải thiện", gradient: "from-chart-4/80 to-chart-4/40" },
                   ].map((item) => (
-                    <div key={item.range} className="flex items-center gap-2 text-xs">
+                    <motion.div 
+                      key={item.range} 
+                      className="flex items-center gap-3 text-sm"
+                      whileHover={{ scale: 1.02, x: 2 }}
+                      transition={{ duration: 0.2 }}
+                    >
                       <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: item.color }}
+                        className={`w-4 h-4 rounded-full border border-white/50 shadow-lg bg-gradient-to-br ${item.gradient}`}
+                        style={{ 
+                          boxShadow: `0 2px 8px ${item.color}30` 
+                        }}
                       />
-                      <span className="text-muted-foreground">{item.range}</span>
-                      <span className="text-foreground font-medium">{item.label}</span>
-                    </div>
+                      <span className="text-muted-foreground font-medium">{item.range}</span>
+                      <span className="text-foreground font-semibold">{item.label}</span>
+                    </motion.div>
                   ))}
                 </div>
               </motion.div>
@@ -233,14 +226,15 @@ export function VietnamHeatMap({ selectedKPI, onKPIChange }: VietnamHeatMapProps
           </div>
         </CardContent>
 
-        {/* Province Detail Dialog */}
         <Dialog open={!!selectedProvince} onOpenChange={() => setSelectedProvince(null)}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-lg glass-effect border-primary/20">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2" style={{ fontFamily: "'Inter', sans-serif" }}>
+              <DialogTitle className="flex items-center gap-3 text-xl gradient-text">
                 <div
-                  className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: selectedProvince ? getColor(selectedProvince.value) : "#gray" }}
+                  className={`w-5 h-5 rounded-full border border-white/50 shadow-lg bg-gradient-to-br ${selectedProvince ? getGradientColor(selectedProvince.value) : 'from-gray-400 to-gray-600'}`}
+                  style={{ 
+                    boxShadow: selectedProvince ? `0 4px 12px ${getColor(selectedProvince.value)}40` : 'none'
+                  }}
                 />
                 {selectedProvince?.name}
               </DialogTitle>
@@ -249,36 +243,68 @@ export function VietnamHeatMap({ selectedKPI, onKPIChange }: VietnamHeatMapProps
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-4"
+                className="space-y-6"
               >
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <div className="text-2xl font-bold text-primary">
+                  <motion.div 
+                    className="text-center p-4 glass-effect rounded-xl border border-primary/20 neon-glow"
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    <div className="text-3xl font-bold gradient-text animate-neon-pulse">
                       <AnimatedCounter end={selectedProvince.value} suffix="%" />
                     </div>
-                    <div className="text-sm text-muted-foreground">Chỉ số hiệu suất</div>
-                  </div>
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <div className="text-2xl font-bold text-primary">
-                      <AnimatedCounter end={selectedProvince.population || 0} decimals={1} suffix="K" />
+                    <div className="text-sm text-muted-foreground font-medium">Chỉ số hiệu suất</div>
+                  </motion.div>
+                  <motion.div 
+                    className="text-center p-4 glass-effect rounded-xl border border-chart-2/20"
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    <div className="text-3xl font-bold text-chart-2">
+                      <AnimatedCounter end={(selectedProvince.population || 0) / 1000} decimals={1} suffix="M" />
                     </div>
-                    <div className="text-sm text-muted-foreground">Dân số (nghìn người)</div>
-                  </div>
+                    <div className="text-sm text-muted-foreground font-medium">Dân số</div>
+                  </motion.div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <div className="text-2xl font-bold text-primary">
-                      <AnimatedCounter end={selectedProvince.gdp || 0} decimals={1} suffix="B" />
+                  <motion.div 
+                    className="text-center p-4 glass-effect rounded-xl border border-chart-3/20"
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    <div className="text-3xl font-bold text-chart-3">
+                      <AnimatedCounter end={(selectedProvince.gdp || 0) / 1000} decimals={1} suffix="T" />
                     </div>
-                    <div className="text-sm text-muted-foreground">GDP (tỷ VNĐ)</div>
-                  </div>
-                  <div className="text-center p-3 bg-muted/50 rounded-lg">
-                    <div className="text-2xl font-bold text-primary">
+                    <div className="text-sm text-muted-foreground font-medium">GDP (nghìn tỷ VNĐ)</div>
+                  </motion.div>
+                  <motion.div 
+                    className="text-center p-4 glass-effect rounded-xl border border-chart-4/20"
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    <div className="text-3xl font-bold text-chart-4">
                       <AnimatedCounter end={selectedProvince.growth || 0} decimals={1} suffix="%" />
                     </div>
-                    <div className="text-sm text-muted-foreground">Tăng trưởng</div>
-                  </div>
+                    <div className="text-sm text-muted-foreground font-medium">Tăng trưởng</div>
+                  </motion.div>
                 </div>
+                
+                <motion.div
+                  className="p-4 rounded-xl border text-center"
+                  style={{
+                    backgroundColor: `${getColor(selectedProvince.value)}15`,
+                    borderColor: `${getColor(selectedProvince.value)}40`,
+                  }}
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <div className="text-lg font-bold" style={{ color: getColor(selectedProvince.value) }}>
+                    {selectedProvince.value >= 90 ? "🌟 Xuất sắc" : 
+                     selectedProvince.value >= 75 ? "👍 Tốt" : 
+                     selectedProvince.value >= 60 ? "📊 Trung bình" : "📈 Cần cải thiện"}
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Đánh giá tổng thể hiệu suất kinh tế
+                  </div>
+                </motion.div>
               </motion.div>
             )}
           </DialogContent>

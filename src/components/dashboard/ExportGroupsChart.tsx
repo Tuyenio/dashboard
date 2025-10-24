@@ -10,471 +10,442 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { Package, TrendingUp, Globe, BarChart3, Truck, Ship } from "lucide-react";
 
-interface ExportData {
-  category: string;
-  value2023: number;
-  value2024: number;
-  growth: number;
-  marketShare: number;
-  topCountries: string[];
-  color: string;
-  icon: string;
-}
-
 export function ExportGroupsChart() {
   const { t } = useLanguage();
-  const [selectedView, setSelectedView] = useState("combined");
-  const [selectedPeriod, setSelectedPeriod] = useState("yearly");
-  const [animationKey, setAnimationKey] = useState(0);
+  const [selectedPeriod, setSelectedPeriod] = useState("12months");
 
-  // Generate realistic export data with variations
-  const generateData = (): ExportData[] => {
-    const exportCategories = [
-      { 
-        name: "Điện tử & Viễn thông", 
-        base: { value2023: 145.2, value2024: 158.7, growth: 9.3, marketShare: 28.5 },
-        topCountries: ["Mỹ", "Trung Quốc", "Nhật Bản"],
-        color: "#3B82F6", 
-        icon: "📱" 
-      },
-      { 
-        name: "Dệt may & Giày dép", 
-        base: { value2023: 89.4, value2024: 94.1, growth: 5.3, marketShare: 17.2 },
-        topCountries: ["EU", "Mỹ", "Hàn Quốc"],
-        color: "#10B981", 
-        icon: "👔" 
-      },
-      { 
-        name: "Máy móc & Thiết bị", 
-        base: { value2023: 67.8, value2024: 75.3, growth: 11.1, marketShare: 13.8 },
-        topCountries: ["Trung Quốc", "Thái Lan", "Malaysia"],
-        color: "#F59E0B", 
-        icon: "⚙️" 
-      },
-      { 
-        name: "Nông sản & Thực phẩm", 
-        base: { value2023: 45.6, value2024: 49.8, growth: 9.2, marketShare: 9.1 },
-        topCountries: ["Trung Quốc", "Nhật Bản", "Hàn Quốc"],
-        color: "#84CC16", 
-        icon: "🌾" 
-      },
-      { 
-        name: "Gỗ & Sản phẩm gỗ", 
-        base: { value2023: 34.2, value2024: 36.8, growth: 7.6, marketShare: 6.7 },
-        topCountries: ["Mỹ", "Nhật Bản", "Trung Quốc"],
-        color: "#8B5CF6", 
-        icon: "🪑" 
-      },
-      { 
-        name: "Thủy sản", 
-        base: { value2023: 28.9, value2024: 31.4, growth: 8.7, marketShare: 5.7 },
-        topCountries: ["Mỹ", "EU", "Nhật Bản"],
-        color: "#06B6D4", 
-        icon: "🐟" 
-      },
-      { 
-        name: "Hóa chất & Phân bón", 
-        base: { value2023: 23.5, value2024: 26.1, growth: 11.1, marketShare: 4.8 },
-        topCountries: ["Trung Quốc", "Ấn Độ", "Thái Lan"],
-        color: "#EF4444", 
-        icon: "🧪" 
-      },
-      { 
-        name: "Dầu khí & Khoáng sản", 
-        base: { value2023: 19.7, value2024: 22.3, growth: 13.2, marketShare: 4.1 },
-        topCountries: ["Singapore", "Malaysia", "Thái Lan"],
-        color: "#F97316", 
-        icon: "⛽" 
-      },
-      { 
-        name: "Ô tô & Phụ tùng", 
-        base: { value2023: 15.3, value2024: 18.9, growth: 23.5, marketShare: 3.4 },
-        topCountries: ["Thái Lan", "Indonesia", "Philippines"],
-        color: "#EC4899", 
-        icon: "🚗" 
-      },
-      { 
-        name: "Khác", 
-        base: { value2023: 42.1, value2024: 44.7, growth: 6.2, marketShare: 8.1 },
-        topCountries: ["Nhiều nước"],
-        color: "#64748B", 
-        icon: "📦" 
-      },
-    ];
-
-    return exportCategories.map((category) => {
-      const variation = () => 0.95 + Math.random() * 0.1;
-      
-      return {
-        category: category.name,
-        value2023: category.base.value2023 * variation(),
-        value2024: category.base.value2024 * variation(),
-        growth: category.base.growth * variation(),
-        marketShare: category.base.marketShare * variation(),
-        topCountries: category.topCountries,
-        color: category.color,
-        icon: category.icon
-      };
-    });
-  };
-
-  const [data, setData] = useState<ExportData[]>(generateData());
-
-  // Auto refresh data every 8 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setData(generateData());
-      setAnimationKey(prev => prev + 1);
-    }, 8000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="glass-effect p-4 rounded-lg shadow-elegant max-w-sm"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl">{data.icon}</span>
-            <h3 className="font-bold text-primary">{data.category}</h3>
-          </div>
-          <div className="space-y-1 text-sm">
-            <div className="flex justify-between gap-4">
-              <span>2023:</span>
-              <AnimatedCounter end={data.value2023} decimals={1} suffix=" tỷ USD" />
-            </div>
-            <div className="flex justify-between gap-4">
-              <span>2024:</span>
-              <AnimatedCounter end={data.value2024} decimals={1} suffix=" tỷ USD" />
-            </div>
-            <div className="flex justify-between gap-4">
-              <span>Tăng trưởng:</span>
-              <AnimatedCounter end={data.growth} decimals={1} suffix="%" />
-            </div>
-            <div className="flex justify-between gap-4">
-              <span>Thị phần:</span>
-              <AnimatedCounter end={data.marketShare} decimals={1} suffix="%" />
-            </div>
-            <div className="mt-2 pt-2 border-t border-border/50">
-              <p className="text-xs text-muted-foreground">Thị trường chính:</p>
-              <p className="text-xs font-medium">{data.topCountries.join(", ")}</p>
-            </div>
-          </div>
-        </motion.div>
-      );
+  // Export data by product groups
+  const exportData = [
+    {
+      month: "T1/2024",
+      electronics: 8.2,
+      textiles: 6.8,
+      agriculture: 4.3,
+      machinery: 5.1,
+      total: 24.4
+    },
+    {
+      month: "T2/2024", 
+      electronics: 8.8,
+      textiles: 7.2,
+      agriculture: 4.1,
+      machinery: 5.4,
+      total: 25.5
+    },
+    {
+      month: "T3/2024",
+      electronics: 9.1,
+      textiles: 7.0,
+      agriculture: 4.5,
+      machinery: 5.8,
+      total: 26.4
+    },
+    {
+      month: "T4/2024",
+      electronics: 9.5,
+      textiles: 7.3,
+      agriculture: 4.7,
+      machinery: 6.0,
+      total: 27.5
+    },
+    {
+      month: "T5/2024",
+      electronics: 9.8,
+      textiles: 7.1,
+      agriculture: 4.9,
+      machinery: 6.2,
+      total: 28.0
+    },
+    {
+      month: "T6/2024",
+      electronics: 10.2,
+      textiles: 7.4,
+      agriculture: 5.1,
+      machinery: 6.4,
+      total: 29.1
+    },
+    {
+      month: "T7/2024",
+      electronics: 10.6,
+      textiles: 7.6,
+      agriculture: 5.3,
+      machinery: 6.7,
+      total: 30.2
+    },
+    {
+      month: "T8/2024",
+      electronics: 10.9,
+      textiles: 7.8,
+      agriculture: 5.5,
+      machinery: 6.9,
+      total: 31.1
+    },
+    {
+      month: "T9/2024",
+      electronics: 11.3,
+      textiles: 8.0,
+      agriculture: 5.7,
+      machinery: 7.2,
+      total: 32.2
+    },
+    {
+      month: "T10/2024",
+      electronics: 11.7,
+      textiles: 8.2,
+      agriculture: 5.9,
+      machinery: 7.4,
+      total: 33.2
+    },
+    {
+      month: "T11/2024",
+      electronics: 12.1,
+      textiles: 8.4,
+      agriculture: 6.1,
+      machinery: 7.7,
+      total: 34.3
+    },
+    {
+      month: "T12/2024",
+      electronics: 12.5,
+      textiles: 8.6,
+      agriculture: 6.3,
+      machinery: 8.0,
+      total: 35.4
     }
-    return null;
-  };
+  ];
 
-  const totalExport2024 = data.reduce((sum, item) => sum + item.value2024, 0);
-  const totalExport2023 = data.reduce((sum, item) => sum + item.value2023, 0);
-  const overallGrowth = ((totalExport2024 - totalExport2023) / totalExport2023) * 100;
-  const avgGrowth = data.reduce((sum, item) => sum + item.growth, 0) / data.length;
+  // Summary statistics
+  const summaryStats = [
+    {
+      category: "Điện tử",
+      value: 125.4,
+      growth: 8.7,
+      share: 35.4,
+      color: "#3b82f6",
+      icon: Package
+    },
+    {
+      category: "Dệt may",
+      value: 91.8,
+      growth: 5.2,
+      share: 25.9,
+      color: "#8b5cf6",
+      icon: Package
+    },
+    {
+      category: "Nông sản",
+      value: 63.5,
+      growth: 3.8,
+      share: 17.9,
+      color: "#22c55e", 
+      icon: Package
+    },
+    {
+      category: "Máy móc",
+      value: 73.2,
+      growth: 6.4,
+      share: 20.8,
+      color: "#f59e0b",
+      icon: Package
+    }
+  ];
+
+  const totalExport = summaryStats.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <Card className="card-premium">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <motion.div
-                className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center"
-                whileHover={{ scale: 1.05, rotate: 5 }}
-              >
-                <Package className="h-6 w-6 text-primary-foreground" />
-              </motion.div>
-              <div>
-                <CardTitle className="text-xl font-bold">
-                  Nhóm hàng Xuất khẩu
+    <Card className="card-premium">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <motion.div
+              className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center neon-glow"
+              whileHover={{ scale: 1.05, rotate: 5 }}
+            >
+              <Ship className="h-6 w-6 text-primary-foreground" />
+            </motion.div>
+            <div>
+              <CardTitle className="text-xl font-bold gradient-text">
+                Xuất khẩu theo nhóm hàng
+              </CardTitle>
+              <p className="text-muted-foreground text-sm">
+                Phân tích xuất khẩu các nhóm sản phẩm chính
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3months">3 tháng</SelectItem>
+                <SelectItem value="6months">6 tháng</SelectItem>
+                <SelectItem value="12months">12 tháng</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        {/* Summary Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {summaryStats.map((stat, index) => (
+            <motion.div
+              key={stat.category}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Card className="bg-gradient-to-r from-primary/5 to-transparent">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="w-10 h-10 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: stat.color + '20' }}
+                    >
+                      <stat.icon className="h-5 w-5" style={{ color: stat.color }} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {stat.category}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <AnimatedCounter
+                          end={stat.value}
+                          className="text-lg font-bold"
+                          prefix="$"
+                          suffix="B"
+                          decimals={1}
+                        />
+                        <Badge 
+                          variant={stat.growth >= 0 ? "default" : "destructive"}
+                          className="text-xs"
+                        >
+                          {stat.growth >= 0 ? "+" : ""}{stat.growth}%
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {stat.share}% tổng xuất khẩu
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Chart Tabs */}
+        <Tabs defaultValue="trend" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="trend">Xu hướng</TabsTrigger>
+            <TabsTrigger value="composition">Cơ cấu</TabsTrigger>
+            <TabsTrigger value="growth">Tăng trưởng</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="trend">
+            <Card className="chart-container">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Xu hướng xuất khẩu theo thời gian
                 </CardTitle>
-                <p className="text-muted-foreground text-sm">
-                  Phân tích kim ngạch xuất khẩu theo nhóm sản phẩm
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="animate-pulse">
-                <div className="status-dot active mr-2"></div>
-                Real-time
-              </Badge>
-              <Button variant="outline" size="sm" className="hover:bg-primary/10">
-                <Globe className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          <div className="space-y-6">
-            {/* Controls */}
-            <div className="flex flex-wrap gap-4">
-              <div className="flex-1 min-w-[200px]">
-                <label className="text-sm font-medium mb-2 block">Chế độ xem</label>
-                <Tabs value={selectedView} onValueChange={setSelectedView} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="combined">Kết hợp</TabsTrigger>
-                    <TabsTrigger value="bar">Cột</TabsTrigger>
-                    <TabsTrigger value="area">Vùng</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-
-              <div className="flex-1 min-w-[200px]">
-                <label className="text-sm font-medium mb-2 block">Kỳ báo cáo</label>
-                <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                  <SelectTrigger className="bg-background/80">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yearly">Theo năm</SelectItem>
-                    <SelectItem value="quarterly">Theo quý</SelectItem>
-                    <SelectItem value="monthly">Theo tháng</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Chart */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`${selectedView}-${selectedPeriod}-${animationKey}`}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.5 }}
-                className="h-96 w-full chart-container"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  {selectedView === "combined" ? (
-                    <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis 
-                        dataKey="category" 
-                        tick={{ fontSize: 10 }}
-                        angle={-45}
-                        textAnchor="end"
-                        height={100}
-                      />
-                      <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
-                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                      <Bar 
-                        yAxisId="left"
-                        dataKey="value2024" 
-                        name="Kim ngạch 2024 (tỷ USD)"
-                        fill="#3B82F6"
-                        radius={[2, 2, 0, 0]}
-                      />
-                      <Line 
-                        yAxisId="right"
-                        type="monotone" 
-                        dataKey="growth" 
-                        stroke="#10B981" 
-                        strokeWidth={3}
-                        name="Tăng trưởng (%)"
-                        dot={{ fill: "#10B981", strokeWidth: 2, r: 4 }}
-                      />
-                    </ComposedChart>
-                  ) : selectedView === "bar" ? (
-                    <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis 
-                        dataKey="category" 
-                        tick={{ fontSize: 10 }}
-                        angle={-45}
-                        textAnchor="end"
-                        height={100}
-                      />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                      <Bar 
-                        dataKey="value2023" 
-                        name="2023"
-                        fill="#94A3B8"
-                        radius={[2, 2, 0, 0]}
-                      />
-                      <Bar 
-                        dataKey="value2024" 
-                        name="2024"
-                        fill="#3B82F6"
-                        radius={[2, 2, 0, 0]}
-                      />
-                    </ComposedChart>
-                  ) : (
-                    <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <defs>
-                        <linearGradient id="colorValue2024" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
-                        </linearGradient>
-                        <linearGradient id="colorValue2023" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#94A3B8" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#94A3B8" stopOpacity={0.1}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis 
-                        dataKey="category" 
-                        tick={{ fontSize: 10 }}
-                        angle={-45}
-                        textAnchor="end"
-                        height={100}
-                      />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                      <Area 
-                        type="monotone" 
-                        dataKey="value2023" 
-                        stroke="#94A3B8" 
-                        fill="url(#colorValue2023)"
-                        name="2023"
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="value2024" 
-                        stroke="#3B82F6" 
-                        fill="url(#colorValue2024)"
-                        name="2024"
-                      />
-                    </AreaChart>
-                  )}
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <ComposedChart data={exportData}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis 
+                      dataKey="month" 
+                      className="text-xs"
+                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    />
+                    <YAxis 
+                      className="text-xs"
+                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                      tickFormatter={(value) => `$${value}B`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '12px',
+                        boxShadow: '0 25px 50px -12px hsl(var(--primary) / 0.25)',
+                      }}
+                      formatter={(value: any, name) => [`$${value}B`, name]}
+                    />
+                    <Legend />
+                    <Bar dataKey="electronics" fill="hsl(var(--chart-1))" name="Điện tử" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="textiles" fill="hsl(var(--chart-2))" name="Dệt may" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="agriculture" fill="hsl(var(--chart-3))" name="Nông sản" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="machinery" fill="hsl(var(--chart-4))" name="Máy móc" radius={[4, 4, 0, 0]} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="total" 
+                      stroke="hsl(var(--chart-5))" 
+                      strokeWidth={4}
+                      name="Tổng cộng"
+                      dot={{ fill: 'hsl(var(--chart-5))', strokeWidth: 3, r: 6 }}
+                    />
+                  </ComposedChart>
                 </ResponsiveContainer>
-              </motion.div>
-            </AnimatePresence>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            {/* Summary Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border/50"
-            >
-              <div className="text-center p-3 rounded-lg bg-gradient-to-r from-primary/10 to-transparent">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Ship className="h-4 w-4 text-primary" />
-                  <p className="text-sm text-muted-foreground">Tổng XK 2024</p>
-                </div>
-                <AnimatedCounter 
-                  end={totalExport2024} 
-                  decimals={1} 
-                  suffix=" tỷ USD"
-                  className="text-lg font-bold text-primary"
-                />
-              </div>
-              <div className="text-center p-3 rounded-lg bg-gradient-to-r from-success/10 to-transparent">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <TrendingUp className="h-4 w-4 text-success" />
-                  <p className="text-sm text-muted-foreground">Tăng trưởng</p>
-                </div>
-                <AnimatedCounter 
-                  end={overallGrowth} 
-                  decimals={1} 
-                  suffix="%"
-                  className="text-lg font-bold text-success"
-                />
-              </div>
-              <div className="text-center p-3 rounded-lg bg-gradient-to-r from-warning/10 to-transparent">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <BarChart3 className="h-4 w-4 text-warning" />
-                  <p className="text-sm text-muted-foreground">TB tăng trưởng</p>
-                </div>
-                <AnimatedCounter 
-                  end={avgGrowth} 
-                  decimals={1} 
-                  suffix="%"
-                  className="text-lg font-bold text-warning"
-                />
-              </div>
-              <div className="text-center p-3 rounded-lg bg-gradient-to-r from-accent/10 to-transparent">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Package className="h-4 w-4 text-accent" />
-                  <p className="text-sm text-muted-foreground">Nhóm hàng</p>
-                </div>
-                <AnimatedCounter 
-                  end={data.length} 
-                  decimals={0}
-                  className="text-lg font-bold text-accent"
-                />
-              </div>
-            </motion.div>
+          <TabsContent value="composition">
+            <Card className="chart-container">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Cơ cấu xuất khẩu
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <AreaChart data={exportData}>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis 
+                      dataKey="month" 
+                      className="text-xs"
+                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    />
+                    <YAxis 
+                      className="text-xs"
+                      tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                      tickFormatter={(value) => `$${value}B`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '12px',
+                        boxShadow: '0 25px 50px -12px hsl(var(--primary) / 0.25)',
+                      }}
+                      formatter={(value: any, name) => [`$${value}B`, name]}
+                    />
+                    <Legend />
+                    <Area
+                      type="monotone"
+                      dataKey="electronics"
+                      stackId="1"
+                      stroke="hsl(var(--chart-1))"
+                      fill="hsl(var(--chart-1))"
+                      fillOpacity={0.8}
+                      name="Điện tử"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="textiles"
+                      stackId="1"
+                      stroke="hsl(var(--chart-2))"
+                      fill="hsl(var(--chart-2))"
+                      fillOpacity={0.8}
+                      name="Dệt may"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="agriculture"
+                      stackId="1"
+                      stroke="hsl(var(--chart-3))"
+                      fill="hsl(var(--chart-3))"
+                      fillOpacity={0.8}
+                      name="Nông sản"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="machinery"
+                      stackId="1"
+                      stroke="hsl(var(--chart-4))"
+                      fill="hsl(var(--chart-4))"
+                      fillOpacity={0.8}
+                      name="Máy móc"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            {/* Top Performers */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-border/50"
-            >
-              <div className="space-y-2">
-                <h4 className="font-semibold text-success flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Top tăng trưởng
-                </h4>
-                {data
-                  .sort((a, b) => b.growth - a.growth)
-                  .slice(0, 3)
-                  .map((item, index) => (
-                    <motion.div
-                      key={item.category}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.6 + index * 0.1 }}
-                      className="flex items-center justify-between p-2 rounded bg-success/10"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>{item.icon}</span>
-                        <span className="text-sm font-medium">{item.category}</span>
+          <TabsContent value="growth">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Tăng trưởng theo ngành</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {summaryStats.map((stat, index) => (
+                      <div key={stat.category} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: stat.color }}
+                          />
+                          <span className="text-sm font-medium">{stat.category}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold">
+                            {stat.growth >= 0 ? "+" : ""}{stat.growth}%
+                          </span>
+                          <Badge 
+                            variant={stat.growth >= 0 ? "default" : "destructive"}
+                            className="text-xs"
+                          >
+                            {stat.growth >= 6 ? "Cao" : stat.growth >= 3 ? "Trung bình" : "Thấp"}
+                          </Badge>
+                        </div>
                       </div>
-                      <Badge variant="outline" className="bg-success/20 text-success">
-                        +<AnimatedCounter end={item.growth} decimals={1} suffix="%" />
-                      </Badge>
-                    </motion.div>
-                  ))}
-              </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
-              <div className="space-y-2">
-                <h4 className="font-semibold text-primary flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  Top kim ngạch
-                </h4>
-                {data
-                  .sort((a, b) => b.value2024 - a.value2024)
-                  .slice(0, 3)
-                  .map((item, index) => (
-                    <motion.div
-                      key={item.category}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.6 + index * 0.1 }}
-                      className="flex items-center justify-between p-2 rounded bg-primary/10"
-                    >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Thống kê tổng quan</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-primary/5 to-transparent rounded-lg">
                       <div className="flex items-center gap-2">
-                        <span>{item.icon}</span>
-                        <span className="text-sm font-medium">{item.category}</span>
+                        <Globe className="h-5 w-5 text-primary" />
+                        <span className="text-sm font-medium">Tổng xuất khẩu</span>
                       </div>
-                      <Badge variant="outline" className="bg-primary/20 text-primary">
-                        <AnimatedCounter end={item.value2024} decimals={1} suffix="B USD" />
-                      </Badge>
-                    </motion.div>
-                  ))}
-              </div>
-            </motion.div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+                      <span className="text-lg font-bold">
+                        <AnimatedCounter
+                          end={totalExport}
+                          prefix="$"
+                          suffix="B"
+                          decimals={1}
+                        />
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-500/5 to-transparent rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-green-500" />
+                        <span className="text-sm font-medium">Tăng trưởng TB</span>
+                      </div>
+                      <span className="text-lg font-bold text-green-500">+6.0%</span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-500/5 to-transparent rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Truck className="h-5 w-5 text-blue-500" />
+                        <span className="text-sm font-medium">Số thị trường</span>
+                      </div>
+                      <span className="text-lg font-bold text-blue-500">187</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 }

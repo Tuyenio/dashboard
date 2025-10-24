@@ -10,536 +10,567 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { TrendingUp, DollarSign, BarChart3, Target, Activity, Award } from "lucide-react";
 
-interface GDPData {
-  period: string;
-  gdpTotal: number;
-  gdpPerCapita: number;
-  gdpGrowth: number;
-  gdpNominal: number;
-  gdpPPP: number;
-  sectors: {
-    agriculture: number;
-    industry: number;
-    services: number;
-  };
-  regions: {
-    north: number;
-    central: number;
-    south: number;
-  };
-  target: number;
-  performance: number;
-}
-
-interface SectorData {
-  sector: string;
-  value: number;
-  growth: number;
-  contribution: number;
-  color: string;
-  icon: string;
-}
-
 export function GDPPerformanceChart() {
   const { t } = useLanguage();
-  const [selectedView, setSelectedView] = useState("overview");
-  const [selectedMetric, setSelectedMetric] = useState("total");
-  const [animationKey, setAnimationKey] = useState(0);
+  const [viewMode, setViewMode] = useState<"quarterly" | "yearly">("quarterly");
 
-  // Generate realistic GDP data with variations
-  const generateData = (): GDPData[] => {
-    const baseData = [
-      { period: "Q1 2023", base: { gdpTotal: 95.8, gdpPerCapita: 3980, gdpGrowth: 5.2, target: 6.5, performance: 80 } },
-      { period: "Q2 2023", base: { gdpTotal: 97.2, gdpPerCapita: 4040, gdpGrowth: 5.8, target: 6.5, performance: 89 } },
-      { period: "Q3 2023", base: { gdpTotal: 98.9, gdpPerCapita: 4110, gdpGrowth: 6.1, target: 6.5, performance: 94 } },
-      { period: "Q4 2023", base: { gdpTotal: 100.1, gdpPerCapita: 4160, gdpGrowth: 6.4, target: 6.5, performance: 98 } },
-      { period: "Q1 2024", base: { gdpTotal: 101.8, gdpPerCapita: 4230, gdpGrowth: 6.7, target: 6.8, performance: 99 } },
-      { period: "Q2 2024", base: { gdpTotal: 103.6, gdpPerCapita: 4305, gdpGrowth: 7.1, target: 6.8, performance: 104 } },
-      { period: "Q3 2024", base: { gdpTotal: 105.2, gdpPerCapita: 4375, gdpGrowth: 7.3, target: 6.8, performance: 107 } },
-      { period: "Q4 2024E", base: { gdpTotal: 106.9, gdpPerCapita: 4445, gdpGrowth: 7.6, target: 6.8, performance: 112 } },
-    ];
-
-    return baseData.map((item) => {
-      const variation = () => 0.97 + Math.random() * 0.06;
-      const sectorVariation = () => 0.95 + Math.random() * 0.1;
-      
-      return {
-        period: item.period,
-        gdpTotal: item.base.gdpTotal * variation(),
-        gdpPerCapita: item.base.gdpPerCapita * variation(),
-        gdpGrowth: item.base.gdpGrowth * variation(),
-        gdpNominal: item.base.gdpTotal * variation() * 1000,
-        gdpPPP: item.base.gdpTotal * variation() * 1.35,
-        target: item.base.target,
-        performance: item.base.performance * variation(),
-        sectors: {
-          agriculture: 12.5 * sectorVariation(),
-          industry: 38.2 * sectorVariation(),
-          services: 49.3 * sectorVariation(),
-        },
-        regions: {
-          north: 25.8 * sectorVariation(),
-          central: 31.5 * sectorVariation(),
-          south: 42.7 * sectorVariation(),
-        }
-      };
-    });
-  };
-
-  const generateSectorData = (): SectorData[] => {
-    const sectors = [
-      { 
-        name: "Nông nghiệp", 
-        base: { value: 12.5, growth: 2.8, contribution: 15.2 },
-        color: "#84CC16", 
-        icon: "🌾" 
-      },
-      { 
-        name: "Công nghiệp", 
-        base: { value: 38.2, growth: 8.3, contribution: 42.8 },
-        color: "#3B82F6", 
-        icon: "🏭" 
-      },
-      { 
-        name: "Dịch vụ", 
-        base: { value: 49.3, growth: 7.1, contribution: 42.0 },
-        color: "#10B981", 
-        icon: "🏢" 
-      },
-    ];
-
-    return sectors.map((sector) => {
-      const variation = () => 0.95 + Math.random() * 0.1;
-      
-      return {
-        sector: sector.name,
-        value: sector.base.value * variation(),
-        growth: sector.base.growth * variation(),
-        contribution: sector.base.contribution * variation(),
-        color: sector.color,
-        icon: sector.icon
-      };
-    });
-  };
-
-  const [data, setData] = useState<GDPData[]>(generateData());
-  const [sectorData, setSectorData] = useState<SectorData[]>(generateSectorData());
-
-  // Auto refresh data every 8 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setData(generateData());
-      setSectorData(generateSectorData());
-      setAnimationKey(prev => prev + 1);
-    }, 8000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="glass-effect p-4 rounded-lg shadow-elegant max-w-sm"
-        >
-          <h3 className="font-bold text-primary mb-2">{label}</h3>
-          <div className="space-y-1 text-sm">
-            <div className="flex justify-between gap-4">
-              <span>GDP Total:</span>
-              <AnimatedCounter end={data.gdpTotal} decimals={1} suffix=" nghìn tỷ VND" />
-            </div>
-            <div className="flex justify-between gap-4">
-              <span>GDP/người:</span>
-              <AnimatedCounter end={data.gdpPerCapita} decimals={0} prefix="$" />
-            </div>
-            <div className="flex justify-between gap-4">
-              <span>Tăng trưởng:</span>
-              <AnimatedCounter end={data.gdpGrowth} decimals={1} suffix="%" />
-            </div>
-            <div className="flex justify-between gap-4">
-              <span>Mục tiêu:</span>
-              <AnimatedCounter end={data.target} decimals={1} suffix="%" />
-            </div>
-            <div className="flex justify-between gap-4">
-              <span>Hiệu suất:</span>
-              <AnimatedCounter end={data.performance} decimals={0} suffix="%" />
-            </div>
-          </div>
-        </motion.div>
-      );
+  // GDP Performance Data
+  const quarterlyData = [
+    {
+      period: "Q1 2023",
+      gdp: 3.32,
+      gdpNominal: 108.2,
+      gdpPerCapita: 4.1,
+      inflation: 3.2,
+      target: 6.5
+    },
+    {
+      period: "Q2 2023", 
+      gdp: 4.14,
+      gdpNominal: 112.5,
+      gdpPerCapita: 4.2,
+      inflation: 2.8,
+      target: 6.5
+    },
+    {
+      period: "Q3 2023",
+      gdp: 5.33,
+      gdpNominal: 118.7,
+      gdpPerCapita: 4.4,
+      inflation: 3.5,
+      target: 6.5
+    },
+    {
+      period: "Q4 2023",
+      gdp: 6.72,
+      gdpNominal: 125.9,
+      gdpPerCapita: 4.6,
+      inflation: 3.9,
+      target: 6.5
+    },
+    {
+      period: "Q1 2024",
+      gdp: 5.66,
+      gdpNominal: 132.1,
+      gdpPerCapita: 4.7,
+      inflation: 4.1,
+      target: 6.0
+    },
+    {
+      period: "Q2 2024",
+      gdp: 6.42,
+      gdpNominal: 139.8,
+      gdpPerCapita: 4.9,
+      inflation: 3.7,
+      target: 6.0
+    },
+    {
+      period: "Q3 2024",
+      gdp: 7.40,
+      gdpNominal: 148.2,
+      gdpPerCapita: 5.1,
+      inflation: 3.3,
+      target: 6.0
+    },
+    {
+      period: "Q4 2024",
+      gdp: 7.09,
+      gdpNominal: 155.6,
+      gdpPerCapita: 5.3,
+      inflation: 3.8,
+      target: 6.0
     }
-    return null;
-  };
-
-  const SectorTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="glass-effect p-4 rounded-lg shadow-elegant max-w-sm"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl">{data.icon}</span>
-            <h3 className="font-bold text-primary">{data.sector}</h3>
-          </div>
-          <div className="space-y-1 text-sm">
-            <div className="flex justify-between gap-4">
-              <span>Tỷ trọng:</span>
-              <AnimatedCounter end={data.value} decimals={1} suffix="%" />
-            </div>
-            <div className="flex justify-between gap-4">
-              <span>Tăng trưởng:</span>
-              <AnimatedCounter end={data.growth} decimals={1} suffix="%" />
-            </div>
-            <div className="flex justify-between gap-4">
-              <span>Đóng góp:</span>
-              <AnimatedCounter end={data.contribution} decimals={1} suffix="%" />
-            </div>
-          </div>
-        </motion.div>
-      );
-    }
-    return null;
-  };
-
-  const latestData = data[data.length - 1];
-  const previousData = data[data.length - 2];
-  const quarterGrowth = latestData && previousData 
-    ? ((latestData.gdpTotal - previousData.gdpTotal) / previousData.gdpTotal) * 100 
-    : 0;
-
-  const radarData = [
-    { metric: "Tăng trưởng", current: latestData?.gdpGrowth || 0, target: latestData?.target || 0 },
-    { metric: "Hiệu suất", current: latestData?.performance || 0, target: 100 },
-    { metric: "Nông nghiệp", current: sectorData[0]?.growth || 0, target: 5 },
-    { metric: "Công nghiệp", current: sectorData[1]?.growth || 0, target: 10 },
-    { metric: "Dịch vụ", current: sectorData[2]?.growth || 0, target: 8 },
   ];
 
+  const yearlyData = [
+    {
+      year: "2019",
+      gdp: 7.02,
+      gdpNominal: 261.9,
+      gdpPerCapita: 2.7,
+      inflation: 2.8
+    },
+    {
+      year: "2020", 
+      gdp: 2.91,
+      gdpNominal: 271.2,
+      gdpPerCapita: 2.8,
+      inflation: 3.2
+    },
+    {
+      year: "2021",
+      gdp: 2.58,
+      gdpNominal: 362.6,
+      gdpPerCapita: 3.7,
+      inflation: 1.8
+    },
+    {
+      year: "2022",
+      gdp: 8.02,
+      gdpNominal: 408.8,
+      gdpPerCapita: 4.1,
+      inflation: 3.2
+    },
+    {
+      year: "2023",
+      gdp: 5.05,
+      gdpNominal: 429.1,
+      gdpPerCapita: 4.3,
+      inflation: 3.3
+    },
+    {
+      year: "2024",
+      gdp: 6.64,
+      gdpNominal: 475.3,
+      gdpPerCapita: 4.7,
+      inflation: 3.7
+    }
+  ];
+
+  // Sector contribution data for radar chart
+  const sectorData = [
+    {
+      sector: "Nông nghiệp",
+      contribution: 12.0,
+      growth: 3.0,
+      fullMark: 15
+    },
+    {
+      sector: "Công nghiệp", 
+      contribution: 33.7,
+      growth: 7.8,
+      fullMark: 40
+    },
+    {
+      sector: "Xây dựng",
+      contribution: 5.7,
+      growth: 5.5,
+      fullMark: 8
+    },
+    {
+      sector: "Dịch vụ",
+      contribution: 48.6,
+      growth: 6.5,
+      fullMark: 55
+    }
+  ];
+
+  const currentData = viewMode === "quarterly" ? quarterlyData : yearlyData;
+  const latestGDP = currentData[currentData.length - 1]?.gdp || 0;
+  const latestNominal = currentData[currentData.length - 1]?.gdpNominal || 0;
+  const latestPerCapita = currentData[currentData.length - 1]?.gdpPerCapita || 0;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <Card className="card-premium">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <motion.div
-                className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center"
-                whileHover={{ scale: 1.05, rotate: 5 }}
-              >
-                <TrendingUp className="h-6 w-6 text-primary-foreground" />
-              </motion.div>
-              <div>
-                <CardTitle className="text-xl font-bold">
-                  Hiệu suất - GDP
-                </CardTitle>
-                <p className="text-muted-foreground text-sm">
-                  Phân tích hiệu suất tăng trưởng kinh tế quốc gia
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="animate-pulse">
-                <div className="status-dot active mr-2"></div>
-                Real-time
-              </Badge>
-              <Button variant="outline" size="sm" className="hover:bg-primary/10">
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Export
-              </Button>
+    <Card className="card-premium">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <motion.div
+              className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center neon-glow"
+              whileHover={{ scale: 1.05, rotate: 5 }}
+            >
+              <TrendingUp className="h-6 w-6 text-primary-foreground" />
+            </motion.div>
+            <div>
+              <CardTitle className="text-xl font-bold gradient-text">
+                Hiệu quả GDP
+              </CardTitle>
+              <p className="text-muted-foreground text-sm">
+                Phân tích chi tiết tăng trưởng kinh tế
+              </p>
             </div>
           </div>
-        </CardHeader>
+          
+          <div className="flex items-center gap-3">
+            <Select value={viewMode} onValueChange={(value: "quarterly" | "yearly") => setViewMode(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="quarterly">Theo quý</SelectItem>
+                <SelectItem value="yearly">Theo năm</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </CardHeader>
 
-        <CardContent>
-          <div className="space-y-6">
-            {/* Controls */}
-            <div className="flex flex-wrap gap-4">
-              <div className="flex-1 min-w-[200px]">
-                <label className="text-sm font-medium mb-2 block">Chế độ xem</label>
-                <Tabs value={selectedView} onValueChange={setSelectedView} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="overview">Tổng quan</TabsTrigger>
-                    <TabsTrigger value="sectors">Ngành</TabsTrigger>
-                    <TabsTrigger value="performance">Hiệu suất</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-
-              <div className="flex-1 min-w-[200px]">
-                <label className="text-sm font-medium mb-2 block">Chỉ số</label>
-                <Select value={selectedMetric} onValueChange={setSelectedMetric}>
-                  <SelectTrigger className="bg-background/80">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="total">GDP Tổng</SelectItem>
-                    <SelectItem value="percapita">GDP/người</SelectItem>
-                    <SelectItem value="growth">Tăng trưởng</SelectItem>
-                    <SelectItem value="performance">Hiệu suất</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Charts */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`${selectedView}-${selectedMetric}-${animationKey}`}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.5 }}
-                className="h-96 w-full chart-container"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  {selectedView === "overview" ? (
-                    <ComposedChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="period" tick={{ fontSize: 12 }} />
-                      <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
-                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend />
-                      <Bar 
-                        yAxisId="left"
-                        dataKey={
-                          selectedMetric === "total" ? "gdpTotal" :
-                          selectedMetric === "percapita" ? "gdpPerCapita" :
-                          selectedMetric === "growth" ? "gdpGrowth" :
-                          "performance"
-                        }
-                        name={
-                          selectedMetric === "total" ? "GDP (nghìn tỷ VND)" :
-                          selectedMetric === "percapita" ? "GDP/người ($)" :
-                          selectedMetric === "growth" ? "Tăng trưởng (%)" :
-                          "Hiệu suất (%)"
-                        }
-                        fill="#3B82F6"
-                        radius={[2, 2, 0, 0]}
+      <CardContent>
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Card className="bg-gradient-to-r from-blue-500/10 to-transparent">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                    <TrendingUp className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Tăng trưởng GDP
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <AnimatedCounter
+                        end={latestGDP}
+                        className="text-lg font-bold"
+                        suffix="%"
+                        decimals={2}
                       />
-                      <Line 
-                        yAxisId="right"
-                        type="monotone" 
-                        dataKey="target" 
-                        stroke="#F59E0B" 
-                        strokeWidth={3}
-                        strokeDasharray="5 5"
-                        name="Mục tiêu (%)"
-                        dot={{ fill: "#F59E0B", strokeWidth: 2, r: 4 }}
-                      />
-                    </ComposedChart>
-                  ) : selectedView === "sectors" ? (
-                    <ComposedChart data={sectorData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="sector" tick={{ fontSize: 12 }} />
-                      <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
-                      <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
-                      <Tooltip content={<SectorTooltip />} />
-                      <Legend />
-                      <Bar 
-                        yAxisId="left"
-                        dataKey="value" 
-                        name="Tỷ trọng (%)"
-                        fill="#8B5CF6"
-                        radius={[2, 2, 0, 0]}
-                      />
-                      <Line 
-                        yAxisId="right"
-                        type="monotone" 
-                        dataKey="growth" 
-                        stroke="#10B981" 
-                        strokeWidth={3}
-                        name="Tăng trưởng (%)"
-                        dot={{ fill: "#10B981", strokeWidth: 2, r: 4 }}
-                      />
-                    </ComposedChart>
-                  ) : (
-                    <RadarChart data={radarData}>
-                      <PolarGrid stroke="hsl(var(--border))" />
-                      <PolarAngleAxis dataKey="metric" tick={{ fontSize: 12 }} />
-                      <PolarRadiusAxis tick={{ fontSize: 10 }} />
-                      <Radar 
-                        name="Hiện tại" 
-                        dataKey="current" 
-                        stroke="#3B82F6" 
-                        fill="#3B82F6" 
-                        fillOpacity={0.3}
-                        strokeWidth={2}
-                      />
-                      <Radar 
-                        name="Mục tiêu" 
-                        dataKey="target" 
-                        stroke="#F59E0B" 
-                        fill="#F59E0B" 
-                        fillOpacity={0.1}
-                        strokeWidth={2}
-                        strokeDasharray="5 5"
-                      />
-                      <Legend />
-                    </RadarChart>
-                  )}
-                </ResponsiveContainer>
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Summary Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border/50"
-            >
-              <div className="text-center p-3 rounded-lg bg-gradient-to-r from-primary/10 to-transparent">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <DollarSign className="h-4 w-4 text-primary" />
-                  <p className="text-sm text-muted-foreground">GDP Hiện tại</p>
-                </div>
-                <AnimatedCounter 
-                  end={latestData?.gdpTotal || 0} 
-                  decimals={1} 
-                  suffix=" nghìn tỷ"
-                  className="text-lg font-bold text-primary"
-                />
-              </div>
-              <div className="text-center p-3 rounded-lg bg-gradient-to-r from-success/10 to-transparent">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <TrendingUp className="h-4 w-4 text-success" />
-                  <p className="text-sm text-muted-foreground">Tăng trưởng</p>
-                </div>
-                <AnimatedCounter 
-                  end={latestData?.gdpGrowth || 0} 
-                  decimals={1} 
-                  suffix="%"
-                  className="text-lg font-bold text-success"
-                />
-              </div>
-              <div className="text-center p-3 rounded-lg bg-gradient-to-r from-warning/10 to-transparent">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Target className="h-4 w-4 text-warning" />
-                  <p className="text-sm text-muted-foreground">Mục tiêu</p>
-                </div>
-                <AnimatedCounter 
-                  end={latestData?.target || 0} 
-                  decimals={1} 
-                  suffix="%"
-                  className="text-lg font-bold text-warning"
-                />
-              </div>
-              <div className="text-center p-3 rounded-lg bg-gradient-to-r from-accent/10 to-transparent">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Activity className="h-4 w-4 text-accent" />
-                  <p className="text-sm text-muted-foreground">Hiệu suất</p>
-                </div>
-                <AnimatedCounter 
-                  end={latestData?.performance || 0} 
-                  decimals={0} 
-                  suffix="%"
-                  className="text-lg font-bold text-accent"
-                />
-              </div>
-            </motion.div>
-
-            {/* Performance Analysis */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border/50"
-            >
-              <div className="space-y-2">
-                <h4 className="font-semibold text-primary flex items-center gap-2">
-                  <Award className="h-4 w-4" />
-                  Top ngành tăng trưởng
-                </h4>
-                {sectorData
-                  .sort((a, b) => b.growth - a.growth)
-                  .map((item, index) => (
-                    <motion.div
-                      key={item.sector}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.6 + index * 0.1 }}
-                      className="flex items-center justify-between p-2 rounded bg-primary/10"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>{item.icon}</span>
-                        <span className="text-sm font-medium">{item.sector}</span>
-                      </div>
-                      <Badge variant="outline" className="bg-primary/20 text-primary">
-                        +<AnimatedCounter end={item.growth} decimals={1} suffix="%" />
+                      <Badge variant={latestGDP >= 6 ? "default" : "secondary"}>
+                        {latestGDP >= 6 ? "Đạt mục tiêu" : "Dưới mục tiêu"}
                       </Badge>
-                    </motion.div>
-                  ))}
-              </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
 
-              <div className="space-y-2">
-                <h4 className="font-semibold text-success flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Xu hướng quý
-                </h4>
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.7 }}
-                  className="p-4 rounded-lg bg-success/10"
-                >
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground mb-1">Tăng trưởng quý</p>
-                    <AnimatedCounter 
-                      end={quarterGrowth} 
-                      decimals={1} 
-                      suffix="%"
-                      className="text-2xl font-bold text-success"
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className="bg-gradient-to-r from-green-500/10 to-transparent">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                    <DollarSign className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      GDP Danh nghĩa
+                    </p>
+                    <AnimatedCounter
+                      end={latestNominal}
+                      className="text-lg font-bold"
+                      prefix="$"
+                      suffix="B"
+                      decimals={1}
                     />
                   </div>
-                  <div className="mt-3 text-center">
-                    <p className="text-xs text-muted-foreground">
-                      {quarterGrowth > 0 ? "📈 Tích cực" : "📉 Cần cải thiện"}
-                    </p>
-                  </div>
-                </motion.div>
-              </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
 
-              <div className="space-y-2">
-                <h4 className="font-semibold text-warning flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  Đánh giá mục tiêu
-                </h4>
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.8 }}
-                  className="p-4 rounded-lg bg-warning/10"
-                >
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground mb-1">Đạt mục tiêu</p>
-                    <AnimatedCounter 
-                      end={((latestData?.gdpGrowth || 0) / (latestData?.target || 1)) * 100} 
-                      decimals={0} 
-                      suffix="%"
-                      className="text-2xl font-bold text-warning"
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="bg-gradient-to-r from-purple-500/10 to-transparent">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                    <Target className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-muted-foreground">
+                      GDP/người
+                    </p>
+                    <AnimatedCounter
+                      end={latestPerCapita}
+                      className="text-lg font-bold"
+                      prefix="$"
+                      suffix="K"
+                      decimals={1}
                     />
                   </div>
-                  <div className="mt-3 text-center">
-                    <p className="text-xs text-muted-foreground">
-                      {((latestData?.gdpGrowth || 0) >= (latestData?.target || 0)) ? "🎯 Vượt mục tiêu" : "⏳ Cần nỗ lực"}
-                    </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Chart Tabs */}
+        <Tabs defaultValue="trend" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="trend">Xu hướng</TabsTrigger>
+            <TabsTrigger value="comparison">So sánh</TabsTrigger>
+            <TabsTrigger value="sectors">Ngành</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="trend">
+            <Card className="chart-container">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2 gradient-text">
+                  <Activity className="h-5 w-5 text-chart-1" />
+                  Xu hướng tăng trưởng GDP
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <ComposedChart data={currentData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted-foreground/20" />
+                    <XAxis 
+                      dataKey={viewMode === "quarterly" ? "period" : "year"}
+                      className="text-xs fill-muted-foreground"
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis 
+                      className="text-xs fill-muted-foreground"
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => `${value}%`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+                        color: 'hsl(var(--foreground))'
+                      }}
+                      formatter={(value: any, name) => {
+                        if (name === "gdp") return [`${value}%`, "Tăng trưởng GDP"];
+                        if (name === "target") return [`${value}%`, "Mục tiêu"];
+                        if (name === "inflation") return [`${value}%`, "Lạm phát"];
+                        return [value, name];
+                      }}
+                    />
+                    <Legend />
+                    <Bar 
+                      dataKey="gdp" 
+                      fill="url(#gdpGradient)"
+                      radius={[4, 4, 0, 0]}
+                      name="Tăng trưởng GDP"
+                    />
+                    {viewMode === "quarterly" && (
+                      <Line 
+                        type="monotone" 
+                        dataKey="target" 
+                        stroke="hsl(var(--chart-3))" 
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        name="Mục tiêu"
+                        dot={{ fill: 'hsl(var(--chart-3))', strokeWidth: 2, r: 3 }}
+                      />
+                    )}
+                    <Line 
+                      type="monotone" 
+                      dataKey="inflation" 
+                      stroke="hsl(var(--chart-2))" 
+                      strokeWidth={2}
+                      name="Lạm phát"
+                      dot={{ fill: 'hsl(var(--chart-2))', strokeWidth: 2, r: 3 }}
+                    />
+                    <defs>
+                      <linearGradient id="gdpGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0.2}/>
+                      </linearGradient>
+                    </defs>
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="comparison">
+            <Card className="chart-container">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2 gradient-text">
+                  <BarChart3 className="h-5 w-5 text-chart-2" />
+                  So sánh các chỉ số kinh tế
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={currentData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted-foreground/20" />
+                    <XAxis 
+                      dataKey={viewMode === "quarterly" ? "period" : "year"}
+                      className="text-xs fill-muted-foreground"
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis 
+                      yAxisId="left"
+                      className="text-xs fill-muted-foreground"
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => `${value}%`}
+                    />
+                    <YAxis 
+                      yAxisId="right"
+                      orientation="right"
+                      className="text-xs fill-muted-foreground"
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => `$${value}B`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+                        color: 'hsl(var(--foreground))'
+                      }}
+                      formatter={(value: any, name) => {
+                        if (name === "gdp") return [`${value}%`, "Tăng trưởng GDP"];
+                        if (name === "gdpNominal") return [`$${value}B`, "GDP Danh nghĩa"];
+                        if (name === "gdpPerCapita") return [`$${value}K`, "GDP/người"];
+                        return [value, name];
+                      }}
+                    />
+                    <Legend />
+                    <Line 
+                      yAxisId="left"
+                      type="monotone" 
+                      dataKey="gdp" 
+                      stroke="hsl(var(--chart-1))" 
+                      strokeWidth={3}
+                      name="Tăng trưởng GDP"
+                      dot={{ fill: 'hsl(var(--chart-1))', strokeWidth: 2, r: 4 }}
+                    />
+                    <Line 
+                      yAxisId="right"
+                      type="monotone" 
+                      dataKey="gdpNominal" 
+                      stroke="hsl(var(--chart-2))" 
+                      strokeWidth={3}
+                      name="GDP Danh nghĩa"
+                      dot={{ fill: 'hsl(var(--chart-2))', strokeWidth: 2, r: 4 }}
+                    />
+                    <Line 
+                      yAxisId="left"
+                      type="monotone" 
+                      dataKey="gdpPerCapita" 
+                      stroke="hsl(var(--chart-3))" 
+                      strokeWidth={2}
+                      name="GDP/người"
+                      dot={{ fill: 'hsl(var(--chart-3))', strokeWidth: 2, r: 3 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="sectors">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="chart-container">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2 gradient-text">
+                    <Award className="h-5 w-5 text-chart-4" />
+                    Đóng góp theo ngành
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <RadarChart data={sectorData}>
+                      <defs>
+                        <linearGradient id="sectorGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--chart-4))" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="hsl(var(--chart-4))" stopOpacity={0.1}/>
+                        </linearGradient>
+                      </defs>
+                      <PolarGrid className="stroke-muted-foreground/20" />
+                      <PolarAngleAxis dataKey="sector" className="text-xs fill-muted-foreground" />
+                      <PolarRadiusAxis 
+                        angle={0}
+                        domain={[0, 'dataMax']}
+                        className="text-xs fill-muted-foreground"
+                      />
+                      <Radar
+                        name="Đóng góp (%)"
+                        dataKey="contribution"
+                        stroke="hsl(var(--chart-4))"
+                        fill="url(#sectorGradient)"
+                        strokeWidth={3}
+                        dot={{ r: 6, strokeWidth: 2, fill: 'hsl(var(--chart-4))' }}
+                      />
+                      <Radar
+                        name="Tăng trưởng (%)"
+                        dataKey="growth"
+                        stroke="hsl(var(--chart-5))"
+                        fill="hsl(var(--chart-5))"
+                        fillOpacity={0.2}
+                        strokeWidth={2}
+                        dot={{ r: 4, strokeWidth: 2, fill: 'hsl(var(--chart-5))' }}
+                      />
+                      <Legend />
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+                          color: 'hsl(var(--foreground))'
+                        }}
+                        formatter={(value: number) => [`${value}%`, 'Giá trị']}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="chart-container">
+                <CardHeader>
+                  <CardTitle className="text-lg gradient-text">Chi tiết theo ngành</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {sectorData.map((sector, index) => (
+                      <div key={sector.sector} className="p-3 bg-gradient-to-r from-primary/5 to-transparent rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium">{sector.sector}</span>
+                          <Badge variant="outline">
+                            {sector.contribution}% GDP
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Tăng trưởng
+                          </span>
+                          <span className="text-sm font-bold text-green-600">
+                            +{sector.growth}%
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </motion.div>
-              </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Performance Summary */}
+        <motion.div 
+          className="mt-6 p-6 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-lg border border-primary/20 neon-glow"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <div className="flex items-center gap-4">
+            <motion.div
+              className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center neon-glow"
+              whileHover={{ scale: 1.05, rotate: 10 }}
+            >
+              <Target className="h-6 w-6 text-primary-foreground" />
             </motion.div>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground font-medium">
+                Đánh giá hiệu quả kinh tế năm 2024
+              </p>
+              <p className="text-xl font-bold mt-1">
+                GDP tăng trưởng <span className="gradient-text animate-neon-pulse">6.64%</span> - Vượt mục tiêu đề ra
+              </p>
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant="default" className="bg-gradient-primary text-primary-foreground">
+                  Xuất sắc
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Cao hơn mục tiêu 0.64%
+                </span>
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+        </motion.div>
+      </CardContent>
+    </Card>
   );
 }
